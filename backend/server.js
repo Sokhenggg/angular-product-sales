@@ -51,6 +51,8 @@ const Order = mongoose.model("Order", orderSchema);
 // Place Order Route
 app.post("/api/BigBasket/PlaceOrder", async (req, res) => {
   try {
+    console.log("Incoming request body:", req.body);
+
     const { CustId, TotalInvoiceAmount, OrderItems } = req.body;
 
     if (!CustId || !TotalInvoiceAmount || !OrderItems || !OrderItems.length) {
@@ -60,15 +62,22 @@ app.post("/api/BigBasket/PlaceOrder", async (req, res) => {
       });
     }
 
-    // Create a new order
+    // Map OrderItems to match the schema
+    const cartItems = OrderItems.map((item) => ({
+      productId: item.productId || item.ProductId,
+      quantity: item.quantity || item.Quantity,
+      productPrice: item.productPrice || item.Price,
+      productName: item.productName || "Unknown",
+      productShortName: item.productShortName || "N/A",
+      addedDate: item.addedDate || new Date().toISOString(),
+      productImageUrl: item.productImageUrl || "",
+      categoryName: item.categoryName || "Uncategorized",
+    }));
+
     const order = new Order({
       custId: CustId,
       totalInvoiceAmount: TotalInvoiceAmount,
-      cartItems: OrderItems.map((item) => ({
-        productId: item.ProductId,
-        quantity: item.Quantity,
-        productPrice: item.Price,
-      })),
+      cartItems,
     });
 
     const savedOrder = await order.save();

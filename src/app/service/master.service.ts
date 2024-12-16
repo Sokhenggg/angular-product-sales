@@ -18,6 +18,17 @@ import {
 import { Constant } from '../constant/constant';
 import { environment } from '../../environment/environment';
 
+export interface OrderItem {
+  ProductId: number;
+  Quantity: number;
+  Price: number;
+  productName?: string;
+  productShortName?: string;
+  addedDate?: string;
+  productImageUrl?: string;
+  categoryName?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -83,9 +94,33 @@ export class MasterService {
     return this.http.get<APIResponseModel>(url);
   }
 
-  onPlaceOrder(obj: OrderModel): Observable<APIResponseModel> {
-    debugger;
+  onPlaceOrder(
+    orderData: OrderModel & { OrderItems?: OrderItem[] }
+  ): Observable<APIResponseModel> {
     const url = `${this.apiUrl}PlaceOrder`;
-    return this.http.post<APIResponseModel>(url, obj);
+    const payload = {
+      CustId: orderData.CustId,
+      TotalInvoiceAmount: orderData.TotalInvoiceAmount,
+      OrderItems: orderData.OrderItems || [],
+    };
+
+    return this.http
+      .post<APIResponseModel>(url, payload)
+      .pipe(catchError(this.handleError));
+  }
+
+  private handleError(error: HttpErrorResponse) {
+    let errorMessage = 'An unknown error occurred!';
+
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      errorMessage = `Error: ${error.error.message}`;
+    } else {
+      // Server-side error
+      errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
+    }
+
+    console.error(errorMessage);
+    return throwError(() => new Error(errorMessage));
   }
 }
